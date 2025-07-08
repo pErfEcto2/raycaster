@@ -45,7 +45,6 @@ walls: list[Line] = [
     Line(v2(200, 200), v2(500, 200), texture_name="brick_wall")
 ]
 
-
 # map edges
 walls.append(Line(v2(0, 0), v2(SCREEN_WIDTH, 0), texture_name="brick_wall"))
 walls.append(Line(v2(0, 0), v2(0, SCREEN_HEIGHT), texture_name="brick_wall"))
@@ -100,6 +99,7 @@ while running:
     rects: list[None | Rect] = []
     n = len(points)
     rect_width = int(SCREEN_WIDTH / n) + 1
+
     for i, point in enumerate(points):
         if point is None:
             rects.append(None)
@@ -112,16 +112,14 @@ while running:
         distance = max(0.1, distance)  # Avoid division by zero
         rect_height = SCREEN_HEIGHT * 100 / distance # magic number
 
-        # wall's, floor's and ceiling's textures
+        # wall's texture
         h = constants.TEXTURE_RESOLUTION
         x = int(h * (point["line"].start.dist(point["pos"]) / point["line"].len()))
+        if  0 <= p.get_angle() <= 180 and point["line"].start.y == point["line"].end.y or\
+            90 <= p.get_angle() <= 270 and point["line"].start.x == point["line"].end.x:
+            x = h - x - 1
+
         for y in range(h):
-            # floor's texture
-
-            # ceiling's texture
-
-
-            # wall's texture
             rect_height_offset = (SCREEN_HEIGHT - rect_height) / 2 + rect_height / h * y 
             rect = Rect(
                 v2(i * rect_width, rect_height_offset),
@@ -141,8 +139,6 @@ while running:
             if color != (0, 0, 0):
                 rect.color = color
                 rects.append(rect)
-
-            
 
     window.fill(constants.BLACK)
 
