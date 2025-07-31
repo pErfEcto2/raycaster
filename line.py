@@ -13,7 +13,7 @@ class Line:
         self._color = color
         self._texture: list[int] = []
 
-        if texture_name is None:
+        if texture_name is None or not texture_name:
             self._texture = [255] * (constants.TEXTURE_RESOLUTION ** 2) * 3
         else:
             try:

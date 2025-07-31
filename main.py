@@ -1,12 +1,13 @@
+print("stoehasonteuh")
 import pygame as pg
 from v2 import V2 as v2
 from player import Player
-from line import Line
 from rect import Rect
 import constants
 import draw
 import lib
 import math
+import util
 
 
 pg.init()
@@ -38,20 +39,20 @@ p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
            rays_number=SCREEN_WIDTH / 10 + 1,
            r=50)
 
-walls: list[Line] = [
-    Line(v2(200, 200), v2(200, 500), texture_name="brick_wall"),
-    Line(v2(200, 500), v2(500, 500), texture_name="brick_wall"),
-    Line(v2(500, 200), v2(500, 500), texture_name="brick_wall"),
-    Line(v2(200, 200), v2(500, 200), texture_name="brick_wall")
+grid = [
+    "bbbbbbbbbbbbb",
+    "b           b",
+    "b      ww w b",
+    "b ww w      b",
+    "b           b",
+    "b    b      b",
+    "bbbbbbb  bbbb",
+    "b           b",
+    "bbbbbbbbbbbbb",
 ]
 
-# map edges
-walls.append(Line(v2(0, 0), v2(SCREEN_WIDTH, 0), texture_name="brick_wall"))
-walls.append(Line(v2(0, 0), v2(0, SCREEN_HEIGHT), texture_name="brick_wall"))
-walls.append(Line(v2(SCREEN_WIDTH - 1, 0), v2(SCREEN_WIDTH - 1, SCREEN_HEIGHT),
-                  texture_name="brick_wall"))
-walls.append(Line(v2(0, SCREEN_HEIGHT - 1), v2(SCREEN_WIDTH, SCREEN_HEIGHT - 1),
-                  texture_name="brick_wall"))
+walls = util.generate_map(grid, SCREEN_WIDTH, SCREEN_HEIGHT)
+
 
 running = True
 while running:
