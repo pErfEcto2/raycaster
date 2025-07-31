@@ -1,8 +1,19 @@
 from line import Line
 from v2 import V2 as v2
+import _pickle as pl
 
 
 def generate_map(grid: list[str], w: int, h: int) -> list[Line]:
+    try:
+        with open("map.pkl", "rb") as f:
+            try:
+                res = pl.load(f)
+                return res
+            except EOFError:
+                pass
+    except OSError:
+        pass
+
     if not grid:
         raise Exception("grid is empty")
 
@@ -43,5 +54,7 @@ def generate_map(grid: list[str], w: int, h: int) -> list[Line]:
                 res.append(Line(v2((j + 1) * wall_len_h, i * wall_len_v),
                                 v2((j + 1) * wall_len_h, (i + 1) * wall_len_v),
                                 texture_name=texture_name))
+    with open("map.pkl", "wb") as f:
+        pl.dump(res, f, -1)
 
     return res

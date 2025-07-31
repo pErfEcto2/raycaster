@@ -1,4 +1,3 @@
-print("stoehasonteuh")
 import pygame as pg
 from v2 import V2 as v2
 from player import Player
@@ -39,6 +38,7 @@ p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
            rays_number=SCREEN_WIDTH / 10 + 1,
            r=50)
 
+# dont forget to remove "map.pkl" file!
 grid = [
     "bbbbbbbbbbbbb",
     "b           b",
