@@ -26,8 +26,6 @@ def generate_map(grid: list[str], w: int, h: int) -> list[Line]:
                 case "w":
                     texture_name = ""
 
-            print(i, j)
-            
             if i - 1 >= 0 and grid[i - 1][j] == " ":
                 res.append(Line(v2(j * wall_len_h, i * wall_len_v),
                                 v2((j + 1) * wall_len_h, i * wall_len_v),
