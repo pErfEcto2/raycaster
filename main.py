@@ -33,25 +33,26 @@ font = pg.font.SysFont("FiraCode", 30)
 
 keys_pressed = {}
 
-p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
-           fov=constants.FOV,
-           rays_number=SCREEN_WIDTH / 10 + 1,
-           r=50)
-
 # dont forget to remove "map.pkl" file!
 grid = [
-    "bbbbbbbbbbbbb",
-    "b           b",
-    "b      ww w b",
-    "b ww w      b",
-    "b           b",
-    "b    b      b",
-    "bbbbbbb  bbbb",
-    "b           b",
-    "bbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "b                        b",
+    "b      ww w         ww w b",
+    "b ww w         ww w      b",
+    "b                        b",
+    "b    b            b      b",
+    "bbbbbbb  bbb  bbbbbb  bbbb",
+    "b                        b",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbb",
 ]
 
 walls = util.generate_map(grid, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
+           walls,
+           fov=constants.FOV,
+           rays_number=SCREEN_WIDTH / 10 + 1,
+           r=50)
 
 
 running = True

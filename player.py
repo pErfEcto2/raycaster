@@ -4,13 +4,21 @@ from math import sin, cos
 from ray import Ray
 from line import Line
 import lib
+from shapely.geometry import LineString
+from shapely.strtree import STRtree
 
 
 class Player:
-    def __init__(self, pos: v2, fov: float = 90, rays_number: float = 0.5,
+    def __init__(self, pos: v2, walls: list[Line], fov: float = 90, rays_number: float = 0.5,
                  rotation_speed: int = 200, speed: int = 500, angle: float = 0,
                  r: float = 20) -> None:
         self._pos = pos
+        self._walls = walls
+        lines = [
+            LineString([(wall.start.x, wall.start.y), (wall.end.x, wall.end.y)])
+            for wall in self._walls
+        ]
+        self._walls_tree = STRtree(lines)
         self._angle = angle
         self._fov = fov
         self._rays_number = rays_number
@@ -20,6 +28,7 @@ class Player:
         self._speed = speed
         self._rays: list[Ray] = []
         self._calculated_rays_points: list[dict[str, v2 | float | Line] | None] = []
+
         
         angle = -self._fov / 2 + self._angle
         while angle <= self._fov / 2 + self._angle:
@@ -38,13 +47,17 @@ class Player:
     def get_size(self) -> float:
         return self._r
 
-    def _calculate_rays(self, walls: list[Line]) -> list[dict[str, v2 | float | Line] | None]:
+    def _calculate_rays(self) -> list[dict[str, v2 | float | Line] | None]:
         res = []
         for ray in self._rays:
+            ray_end = ray.start + lib.v2_from_angle(ray.get_angle()) * 10000
+            ray_line = LineString([(ray.start.x, ray.start.y), (ray_end.x, ray_end.y)])
+
             closest_point: v2 | None = None
             closest_wall: Line | None = None
 
-            for wall in walls:
+            for wall_idx in self._walls_tree.query_nearest(ray_line):
+                wall = self._walls[wall_idx]
                 tmp_point: v2 | None = ray.intersects_with_line(wall)
                 if tmp_point is None:
                     continue
@@ -59,7 +72,10 @@ class Player:
             if closest_point is None:
                 res.append(None)
             else:
-                res.append({"angle": ray.get_angle(), "pos": closest_point, "line": closest_wall})
+                res.append({"angle": ray.get_angle(),
+                            "pos": closest_point,
+                            "line": closest_wall,
+                            "dist": self._pos.dist(closest_point)})
 
         return res 
 
@@ -179,7 +195,7 @@ class Player:
         """
         update the player
         """
-        self._calculated_rays_points = self._calculate_rays(walls)
+        self._calculated_rays_points = self._calculate_rays()
         
         for wall in walls:
             pts = self._intersects_with_line(wall)
