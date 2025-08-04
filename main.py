@@ -43,6 +43,9 @@ grid = [
     "b    b            b      b",
     "bbbbbbb  bbb  bbbbbb  bbbb",
     "b                        b",
+    "b                        b",
+    "b                        b",
+    "b                        b",
     "bbbbbbbbbbbbbbbbbbbbbbbbbb",
 ]
 
@@ -51,9 +54,9 @@ walls = util.generate_map(grid, SCREEN_WIDTH, SCREEN_HEIGHT)
 p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
            walls,
            fov=constants.FOV,
-           rays_number=SCREEN_WIDTH / 10 + 1,
-           r=50)
-
+           rays_number=250,
+           r=25,
+           speed=400)
 
 running = True
 while running:

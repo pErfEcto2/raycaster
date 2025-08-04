@@ -9,7 +9,7 @@ from shapely.strtree import STRtree
 
 
 class Player:
-    def __init__(self, pos: v2, walls: list[Line], fov: float = 90, rays_number: float = 0.5,
+    def __init__(self, pos: v2, walls: list[Line], fov: float = 90, rays_number: float = 100,
                  rotation_speed: int = 200, speed: int = 500, angle: float = 0,
                  r: float = 20) -> None:
         self._pos = pos
@@ -76,7 +76,6 @@ class Player:
                             "pos": closest_point,
                             "line": closest_wall,
                             "dist": self._pos.dist(closest_point)})
-
         return res 
 
     def rotate_right(self, amt: float, dt: float) -> None:
