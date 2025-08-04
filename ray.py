@@ -3,6 +3,7 @@ import pygame as pg
 from v2 import V2 as v2
 from line import Line
 import lib
+from shapely import LineString
 
 
 class Ray:
@@ -18,6 +19,11 @@ class Ray:
         self._angle = angle
         self._color = color
         self.end = self._get_end()
+        ray_end = self.start + lib.v2_from_angle(self.get_angle()) * 10000
+        self._ray_line = LineString([(self.start.x, self.start.y), (ray_end.x, ray_end.y)])
+
+    def get_ray_line(self) -> LineString:
+        return self._ray_line
 
     def get_angle(self) -> float:
         return self._angle
