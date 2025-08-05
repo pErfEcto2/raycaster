@@ -21,5 +21,5 @@ GREEN = (0, 255, 0)
 FPS_OFFSET_FACTOR = (0.015, 0.025)
 
 # general
-FOV                = 90
+FOV                = 60
 TEXTURE_RESOLUTION = 32

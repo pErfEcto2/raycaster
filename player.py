@@ -55,6 +55,7 @@ class Player:
 
             closest_point: v2 | None = None
             closest_wall: Line | None = None
+            min_dist = float("inf")
 
             for wall_idx in self._walls_tree.query_nearest(ray_line):
                 wall = self._walls[wall_idx]
@@ -64,10 +65,13 @@ class Player:
                 if closest_point is None:
                     closest_point = tmp_point
                     closest_wall = wall
+                    min_dist = ray.start.dist(tmp_point)
                 else:
-                    if ray.start.dist(tmp_point) < ray.start.dist(closest_point):
+                    d = ray.start.dist(tmp_point)
+                    if d < min_dist:
                         closest_point = tmp_point
                         closest_wall = wall
+                        min_dist = d
 
             if closest_point is None:
                 res.append(None)

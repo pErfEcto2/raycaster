@@ -115,7 +115,7 @@ while running:
         ray_angle_diff = p.get_angle() - point["angle"]
         distance = true_distance * math.cos(lib.degree_to_rad(ray_angle_diff))
         distance = max(0.1, distance)  # Avoid division by zero
-        rect_height = SCREEN_HEIGHT * 200 / distance # magic number
+        rect_height = SCREEN_HEIGHT * 100 / distance # magic number
 
         # wall's texture
         h = constants.TEXTURE_RESOLUTION
