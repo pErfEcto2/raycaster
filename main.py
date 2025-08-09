@@ -35,18 +35,28 @@ keys_pressed = {}
 
 # dont forget to remove "map.pkl" file!
 grid = [
-    "bbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "b                        b",
-    "b      ww w         ww w b",
-    "b ww w         ww w      b",
-    "b                        b",
-    "b    b            b      b",
-    "bbbbbbb  bbb  bbbbbb  bbbb",
-    "b                        b",
-    "b                        b",
-    "b                        b",
-    "b                        b",
-    "bbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "b                                                         b",
+    "b        ww  ww w      w      ww w      ww w         ww w b",
+    "b ww www   w         w      w         w         ww w      b",
+    "b                                                         b",
+    "b    bbb   b                                       b      b",
+    "bbbbbbbbb  bb  bbb  bbbbb  bbb  bbb  bbb  bbb  bbbbbb  bbbb",
+    "b                                                         b",
+    "b                                                         b",
+    "b                                                         b",
+    "b        ww  ww w      w      ww w      ww w         ww w b",
+    "b ww www   w         w      w         w         ww w      b",
+    "b                                                         b",
+    "b    bbb   b                                       b      b",
+    "bbbbbbbbb  bb  bbb  bbbbb  bbb  bbb  bbb  bbb  bbbbbb  bbbb",
+    "b                                                         b",
+    "b                                                         b",
+    "b                                                         b",
+    "b                                                         b",
+    "b                                                         b",
+    "b                                                         b",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 ]
 
 walls = util.generate_map(grid, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -55,8 +65,9 @@ p = Player(v2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
            walls,
            fov=constants.FOV,
            rays_number=250,
-           r=40,
-           speed=400)
+           r=30,
+           speed=400,
+           rotation_speed=100)
 
 running = True
 while running:
@@ -177,3 +188,4 @@ while running:
     pg.display.flip()
 
 pg.quit()
+p.close()

@@ -4,8 +4,70 @@ from math import sin, cos
 from ray import Ray
 from line import Line
 import lib
-from shapely.geometry import LineString
-from shapely.strtree import STRtree
+from concurrent.futures import ProcessPoolExecutor
+import math
+import os
+
+
+_WORKER_WALLS = None
+
+def _worker_init(walls_tuples):
+    """Initializer for worker processes; runs once per worker."""
+    global _WORKER_WALLS
+    _WORKER_WALLS = walls_tuples
+
+def _intersect_ray_segment(x1, y1, x2, y2, x3, y3, x4, y4):
+    # robust parametric intersection (ray from p1->p2 vs segment p3->p4)
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-9:
+        return None
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+    if t < 0.0 or t > 1.0 or u < 0.0 or u > 1.0:
+        return None
+    ix = x1 + t * (x2 - x1)
+    iy = y1 + t * (y2 - y1)
+    return (ix, iy)
+
+def _cast_rays_chunk(chunk):
+    """
+    Worker function: chunk = (starts_x_list, starts_y_list, angles_list)
+    returns a list of results matching input ray order:
+      None or (angle, ix, iy, wall_index, dist)
+    Uses module-global _WORKER_WALLS (set by initializer).
+    """
+    global _WORKER_WALLS
+    starts_x, starts_y, angles = chunk
+    out = []
+    for sx, sy, angle in zip(starts_x, starts_y, angles):
+        rad = angle * math.pi / 180.0
+        rx2 = sx + math.cos(rad) * 10000.0
+        ry2 = sy + math.sin(rad) * 10000.0
+
+        best_pt = None
+        best_idx = -1
+        best_dist = float("inf")
+
+        # iterate walls that were preloaded into this worker as tuples:
+        # each wall tuple is (x1, y1, x2, y2)
+        for idx, w in enumerate(_WORKER_WALLS):
+            x3, y3, x4, y4 = w
+            pt = _intersect_ray_segment(sx, sy, rx2, ry2, x3, y3, x4, y4)
+            if pt is None:
+                continue
+            dx = pt[0] - sx
+            dy = pt[1] - sy
+            d = math.hypot(dx, dy)
+            if d < best_dist:
+                best_dist = d
+                best_pt = pt
+                best_idx = idx
+
+        if best_pt is None:
+            out.append(None)
+        else:
+            out.append((angle, best_pt[0], best_pt[1], best_idx, best_dist))
+    return out
 
 
 class Player:
@@ -14,11 +76,6 @@ class Player:
                  r: float = 20) -> None:
         self._pos = pos
         self._walls = walls
-        lines = [
-            LineString([(wall.start.x, wall.start.y), (wall.end.x, wall.end.y)])
-            for wall in self._walls
-        ]
-        self._walls_tree = STRtree(lines)
         self._angle = angle
         self._fov = fov
         self._rays_number = rays_number
@@ -29,11 +86,29 @@ class Player:
         self._rays: list[Ray] = []
         self._calculated_rays_points: list[dict[str, v2 | float | Line] | None] = []
 
-        
         angle = -self._fov / 2 + self._angle
         while angle <= self._fov / 2 + self._angle:
             self._rays.append(Ray(self._pos, angle))
             angle += self._ray_degree
+
+        # ---- multiprocessing pool (kept alive) ----
+        # convert walls to primitive tuples once (pickled only on pool creation)
+        self._walls_tuples = [(w.start.x, w.start.y, w.end.x, w.end.y) for w in self._walls]
+
+        # choose number of workers (None uses default). You can tune max_workers.
+        max_workers = os.cpu_count() or 2
+        self._pool = ProcessPoolExecutor(
+            max_workers=max_workers,
+            initializer=_worker_init,
+            initargs=(self._walls_tuples,)
+        )
+
+    def close(self):
+        """Shutdown the persistent process pool (call once at program end)."""
+        if getattr(self, "_pool", None) is not None:
+            self._pool.shutdown(wait=True)
+            self._pool = None
+
 
     def get_rays(self) -> list[Ray]:
         return self._rays
@@ -48,39 +123,41 @@ class Player:
         return self._r
 
     def _calculate_rays(self) -> list[dict[str, v2 | float | Line] | None]:
+        # Prepare simple arrays of ray data (primitive floats)
+        n = len(self._rays)
+        if n == 0:
+            return []
+
+        starts_x = [r.start.x for r in self._rays]
+        starts_y = [r.start.y for r in self._rays]
+        angles = [r.get_angle() for r in self._rays]
+
+        # chunking: tune chunk_size (32 is a reasonable starting point)
+        chunk_size = 32
+        chunks = []
+        for i in range(0, n, chunk_size):
+            j = i + chunk_size
+            chunks.append((starts_x[i:j], starts_y[i:j], angles[i:j]))
+
+        assert self._pool is not None
+        # map chunks to worker pool (workers already have walls preloaded)
+        chunks_results = list(self._pool.map(_cast_rays_chunk, chunks))
+
+        # flatten and convert results back to the original API (v2 + Line object)
+        flat = [item for chunk in chunks_results for item in chunk]
         res = []
-        for ray in self._rays:
-            ray_end = ray.start + lib.v2_from_angle(ray.get_angle()) * 10000
-            ray_line = LineString([(ray.start.x, ray.start.y), (ray_end.x, ray_end.y)])
-
-            closest_point: v2 | None = None
-            closest_wall: Line | None = None
-            min_dist = float("inf")
-
-            for wall_idx in self._walls_tree.query_nearest(ray_line):
-                wall = self._walls[wall_idx]
-                tmp_point: v2 | None = ray.intersects_with_line(wall)
-                if tmp_point is None:
-                    continue
-                if closest_point is None:
-                    closest_point = tmp_point
-                    closest_wall = wall
-                    min_dist = ray.start.dist(tmp_point)
-                else:
-                    d = ray.start.dist(tmp_point)
-                    if d < min_dist:
-                        closest_point = tmp_point
-                        closest_wall = wall
-                        min_dist = d
-
-            if closest_point is None:
+        for item in flat:
+            if item is None:
                 res.append(None)
             else:
-                res.append({"angle": ray.get_angle(),
-                            "pos": closest_point,
-                            "line": closest_wall,
-                            "dist": self._pos.dist(closest_point)})
-        return res 
+                angle, ix, iy, wall_idx, dist = item
+                res.append({
+                    "angle": angle,
+                    "pos": v2(ix, iy),
+                    "line": self._walls[wall_idx],
+                    "dist": dist
+                })
+        return res
 
     def rotate_right(self, amt: float, dt: float) -> None:
         """
